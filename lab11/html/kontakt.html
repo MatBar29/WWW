@@ -1,0 +1,62 @@
+<div id="animacjaTestowa1" class="test-block">kliknij, a się powiększe</div>
+
+<script>
+    $(document).ready(function() {
+        $("#animacjaTestowa1").on("click", function() {
+            $(this).animate({
+                width: "500px",
+                opacity: 0.4,
+                fontSize: "3em",
+                borderWidth: "10px"
+            }, 1500);
+        });
+    });
+</script>
+
+<div id="animacjaTestowa2" class="test-block">najedź kursorem a sie powieksze</div>
+
+<script>
+    $(document).ready(function() {
+        $("#animacjaTestowa2").on({
+            "mouseover": function() {
+                $(this).animate({
+                    width: 300
+                }, 800);
+            },
+            "mouseout": function() {
+                $(this).animate({
+                    width: 200
+                }, 800);
+            }
+        });
+    });
+</script>
+
+<div id="animacjaTestowa3" class="test-block">
+    Klikaj abym urósł
+</div>
+
+<script>
+    $(document).ready(function() {
+        $("#animacjaTestowa3").on("click", function() {
+            if (!$(this).is(":animated")) {
+                $(this).animate({
+                    width: "+=" + 50,
+                    height: "+=" + 10,
+                    opacity: "-=" + 0.1
+                }, 3000);
+            }
+        });
+    });
+</script>
+<div class="contact">
+    <h2>Kontakt</h2>
+    <p>Aby skontaktować się z nami, wypełnij poniższy formularz:</p>
+    <form action="barskimateusz222@gmail.com" method="post" enctype="text/plain">
+        Imię: <input type="text" name="imie"><br>
+        E-mail: <input type="text" name="email"><br>
+        Wiadomość:<br>
+        <textarea name="wiadomosc" rows="5" cols="40"></textarea><br>
+        <input type="submit" value="Wyślij">
+    </form>
+</div>
