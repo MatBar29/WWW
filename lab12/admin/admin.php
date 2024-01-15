@@ -1,4 +1,5 @@
 <?php
+// Inicjalizacja sesji i połączenia z bazą danych
 global $pass;
 session_start();
 
@@ -18,6 +19,7 @@ if ($conn->connect_error) {
 class AdminPanel
 {
     private $conn;  // Dodaj właściwość do przechowywania obiektu połączenia
+    private $pass;
     public function __construct($conn,$pass)
     {
         $this->conn = $conn;
@@ -32,7 +34,7 @@ class AdminPanel
         <div class="logowanie">
          <h1 class="heading">Zaloguj:</h1>
           <div class="logowanie">
-           <form method="post" name="LoginForm" enctype="multipart/form-data" action="' . $_SERVER['REQUEST_URI'] . '">
+           <form method="post" name="LoginForm" enctype="multipart/form-data" action="' . htmlspecialchars($_SERVER['REQUEST_URI']) . '">
             <table class="logowanie">
               <tr><td class="log4_t">[email]</td><td><input type="text" name="login_email" class="logowanie" /></td></tr>
               <tr><td class="log4_t">[haslo]</td><td><input type="password" name="login_pass" class="logowanie" /></td></tr>
@@ -527,7 +529,7 @@ class AdminPanel
 
 
 $adminPanel = new AdminPanel($conn, $pass);
-
+// Obsługa zalogowania i przesłanych formularzy
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Sprawdź, czy formularz logowania został przesłany
     if (isset($_POST['login_email']) && isset($_POST['login_pass'])) {
@@ -543,18 +545,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $adminPanel->PrzypomnijHaslo();
 }
 
-// Sprawdź, czy użytkownik jest zalogowany
+// Sprawdzenie, czy użytkownik jest zalogowany
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-
+    // Wyświetlanie formularza logowania, kontaktu, przypomnienia hasła dla niezalogowanego użytkownika
     echo $adminPanel->FormularzLogowania();
     echo $adminPanel->PokazKontakt();
     echo $adminPanel->PokazPrzypomnienieHasla();
 }
 else {
-
-    // Wyświetl listę podstron i formularz edycji, jeśli użytkownik jest zalogowany
-
-    // Reszta kodu obsługującego formularze dodawania, usuwania, edycji, wyświetlania kategorii, drzewa kategorii, produktów
+    // Wyświetlanie listy podstron, formularzy edycji, przycisku "Wyloguj" dla zalogowanego użytkownika
         if (isset($_GET['action'])) {
             if ($_GET['action'] == 'edit_page' && isset($_GET['id'])) {
                 $pageId = $_GET['id'];
@@ -581,12 +580,7 @@ else {
             $pageIdToDelete = $_POST['page_id'];
             $adminPanel->UsunPodstrone($pageIdToDelete);
         }
-        // Dodaj przycisk "Wyloguj"
         echo '<a href="' . $_SERVER['REQUEST_URI'] . '?action=logout">Wyloguj</br></a>';
-
-        // Wyświetl listę podstron i formularz edycji, jeśli użytkownik jest zalogowany
-        // ... (poprzedni kod)
-
         // Dodaj obsługę wylogowania
         if (isset($_GET['action']) && $_GET['action'] == 'logout') {
             // Zakończ sesję i przekieruj na stronę logowania

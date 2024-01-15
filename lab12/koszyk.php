@@ -17,22 +17,30 @@ function dodajDoKoszyka($id, $ilosc, $baza)
 
     $produktID = "produkt_" . $id;
     if (array_key_exists($produktID, $_SESSION['koszyk'])) {
-        $query = "SELECT ilosc_sztuk FROM produkt WHERE id = $id";
-        $result = mysqli_query($baza, $query);
-        $produkt = mysqli_fetch_assoc($result);
+        $query = "SELECT ilosc_sztuk FROM produkt WHERE id = ?";
+        $stmt = $baza->prepare($query);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $produkt = $result->fetch_assoc();
 
         if ($produkt['ilosc_sztuk'] >= $ilosc) {
             $_SESSION['koszyk'][$produktID]['ilosc'] += $ilosc;
             $newQuantity = $_SESSION['koszyk'][$produktID]['ilosc'];
-            $updateQuery = "UPDATE produkt SET ilosc_sztuk = ilosc_sztuk - $ilosc WHERE id = $id";
-            mysqli_query($baza, $updateQuery);
+            $updateQuery = "UPDATE produkt SET ilosc_sztuk = ilosc_sztuk - ? WHERE id = ?";
+            $stmt = $baza->prepare($updateQuery);
+            $stmt->bind_param("ii", $ilosc, $id);
+            $stmt->execute();
         } else {
             echo "Brak dostępności wystarczającej ilości produktu w magazynie. Ilość sztuk w magazynie: {$produkt['ilosc_sztuk']}";
         }
     } else {
-        $query = "SELECT * FROM produkt WHERE id = $id";
-        $result = mysqli_query($baza, $query);
-        $produkt = mysqli_fetch_assoc($result);
+        $query = "SELECT * FROM produkt WHERE id = ?";
+        $stmt = $baza->prepare($query);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $produkt = $result->fetch_assoc();
 
         if ($produkt['ilosc_sztuk'] >= $ilosc) {
 
@@ -45,8 +53,10 @@ function dodajDoKoszyka($id, $ilosc, $baza)
             );
 
             $newQuantity = $_SESSION['koszyk'][$produktID]['ilosc'];
-            $updateQuery = "UPDATE produkt SET ilosc_sztuk = ilosc_sztuk - $ilosc WHERE id = $id";
-            mysqli_query($baza, $updateQuery);
+            $updateQuery = "UPDATE produkt SET ilosc_sztuk = ilosc_sztuk - ? WHERE id = ?";
+            $stmt = $baza->prepare($updateQuery);
+            $stmt->bind_param("ii", $ilosc, $id);
+            $stmt->execute();
         } else {
             echo "Brak dostępności wystarczającej ilości produktu w magazynie. Ilość sztuk w magazynie: {$produkt['ilosc_sztuk']}";
         }
@@ -64,8 +74,10 @@ function usunZKoszyka($id, $ilosc, $baza)
         }
 
         $newQuantity = $ilosc;
-        $updateQuery = "UPDATE produkt SET ilosc_sztuk = ilosc_sztuk + $newQuantity WHERE id = $id";
-        mysqli_query($baza, $updateQuery);
+        $updateQuery = "UPDATE produkt SET ilosc_sztuk = ilosc_sztuk + ? WHERE id = ?";
+        $stmt = $baza->prepare($updateQuery);
+        $stmt->bind_param("ii", $newQuantity, $id);
+        $stmt->execute();
     }
 }
 
@@ -82,14 +94,17 @@ function zliczWartoscKoszyka()
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['dodaj_do_koszyka'])) {
-        $produktID = $_POST['produkt_id'];
-        $ilosc = $_POST['ilosc'];
+        $produktID = filter_input(INPUT_POST, 'produkt_id', FILTER_VALIDATE_INT);
+        $ilosc = filter_input(INPUT_POST, 'ilosc', FILTER_VALIDATE_INT);
         $baza = db_connect();
 
         // Sprawdź dostępność również po stronie serwera
-        $query = "SELECT ilosc_sztuk FROM produkt WHERE id = $produktID";
-        $result = mysqli_query($baza, $query);
-        $produkt = mysqli_fetch_assoc($result);
+        $query = "SELECT ilosc_sztuk FROM produkt WHERE id = ?";
+        $stmt = $baza->prepare($query);
+        $stmt->bind_param("i", $produktID);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $produkt = $result->fetch_assoc();
 
         if ($produkt['ilosc_sztuk'] >= $ilosc) {
             dodajDoKoszyka($produktID, $ilosc, $baza);
@@ -97,8 +112,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo "Brak dostępności wystarczającej ilości produktu w magazynie. Ilość sztuk w magazynie: {$produkt['ilosc_sztuk']}";
         }
     } elseif (isset($_POST['usun_z_koszyka'])) {
-        $produktID = $_POST['produkt_id'];
-        $ilosc = $_POST['ilosc'];
+        $produktID = filter_input(INPUT_POST, 'produkt_id', FILTER_VALIDATE_INT);
+        $ilosc = filter_input(INPUT_POST, 'ilosc', FILTER_VALIDATE_INT);
         $baza = db_connect();
         usunZKoszyka($produktID, $ilosc, $baza);
     }
@@ -117,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php
 echo "<h2>Produkty</h2>";
 
-$query_produkty = "SELECT * FROM produkt";
+$query_produkty = "SELECT * FROM produkt WHERE status_dostepnosci = 1";
 $result_produkty = mysqli_query($conn, $query_produkty);
 
 if (mysqli_num_rows($result_produkty) > 0) {
@@ -127,7 +142,6 @@ if (mysqli_num_rows($result_produkty) > 0) {
         echo "<img src='{$produkt['zdjecie']}' alt='{$produkt['tytul']}' style='max-width: 100px; max-height: 100px;'>";
         echo "<p>{$produkt['tytul']}</p>";
         echo "<p>Cena netto: {$produkt['cena_netto']} PLN</p>";
-        // Oblicz cenę brutto na podstawie ceny netto i stawki VAT
         $cenaBrutto = $produkt['cena_netto'] * (1 + $produkt['podatek_vat']);
         echo "<p>Cena: {$cenaBrutto} PLN</p>";
 
